@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <!-- Link to Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Custom CSS styles */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .chat-messages {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .input-group {
+            max-width: 500px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-5 text-center">Tic Tac Toe</h1>
+        <div class="board mt-5 mx-auto">
+            <% for (let i = 0; i < 3; i++) { %>
+                <% for (let j = 0; j < 3; j++) { %>
+                    <div class="cell text-center border" id="<%= i %>-<%= j %>"></div>
+                <% } %>
+            <% } %>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-6 offset-md-3 chat-container">
+                <div class="chat-messages" id="chatMessages"></div>
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" placeholder="Nhập tin nhắn...">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">Gửi</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const gameId = "<%= gameId %>";
+        const playerId = "<%= userId %>";
+        let lastPlayer = "";
+        const socket = io();
+
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                if (lastPlayer == playerId) return;
+                if (cell.innerText === '') {
+                    const [row, col] = cell.id.split('-');
+                    const data = { gameId, player: playerId, row: parseInt(row), col: parseInt(col) };
+                    socket.emit('move', data);
+                    lastPlayer = playerId;
+                    cell.innerText = playerId === "<%= userId %>" ? 'X' : 'O';
+                    cell.style.pointerEvents = 'none';
+                }
+            });
+        });
+
+        socket.on('move', data => {
+            const cell = document.getElementById(`${data.row}-${data.col}`);
+            if (cell.innerText === '' && data.gameId == gameId) {
+                cell.innerText = data.player === playerId ? 'X' : 'O';
+                cell.style.pointerEvents = 'none';
+                lastPlayer = data.player;
+            }
+            if (data.winner) {
+                alert((playerId == data.winner ? "Bạn" : "Đối thủ") + " đã thắng");
+            }
+        });
+        
+        document.getElementById('chatForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const message = document.getElementById('messageInput').value;
+            if (message.trim() !== '') {
+                const data = {
+                    roomId: gameId,
+                    sender: playerId,
+                    message: message.trim()
+                };
+                socket.emit('sendMessage', data);
+                document.getElementById('messageInput').value = '';
+            }
+        });
+        socket.on('receiveMessage', function(message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message.sender + ': ' + message.message;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    </script>
+</body>
+
+</html>
