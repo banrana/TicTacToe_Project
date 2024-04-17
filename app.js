@@ -47,7 +47,12 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('move', data);
     console.log(data);
   });
-  
+
+  socket.on('joinRoomChat', async (data) => {
+    console.log(data);
+    socket.join(data.roomId);
+  });
+
   socket.on('sendMessage', async (data) => {
     try {
       const chatMessage = await chatService.sendMessage(data);

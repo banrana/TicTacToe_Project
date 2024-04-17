@@ -59,12 +59,14 @@
 <body>
     <div class="container">
         <h1 class="mt-5 text-center">Tic Tac Toe</h1>
-        <div class="board mt-5 mx-auto">
-            <% for (let i = 0; i < 3; i++) { %>
-                <% for (let j = 0; j < 3; j++) { %>
-                    <div class="cell text-center border" id="<%= i %>-<%= j %>"></div>
-                <% } %>
-            <% } %>
+        <div class="row justify-content-center mt-5">
+            <div class="board">
+                <% for (let i=0; i < 3; i++) { %>
+                    <% for (let j=0; j < 3; j++) { %>
+                        <div class="cell text-center border" id="<%= i %>-<%= j %>"></div>
+                        <% } %>
+                            <% } %>
+            </div>
         </div>
 
         <div class="row mt-5">
@@ -114,8 +116,8 @@
                 alert((playerId == data.winner ? "Bạn" : "Đối thủ") + " đã thắng");
             }
         });
-        
-        document.getElementById('chatForm').addEventListener('submit', function(event) {
+
+        document.getElementById('chatForm').addEventListener('submit', function (event) {
             event.preventDefault();
             const message = document.getElementById('messageInput').value;
             if (message.trim() !== '') {
@@ -128,13 +130,14 @@
                 document.getElementById('messageInput').value = '';
             }
         });
-        socket.on('receiveMessage', function(message) {
+        socket.on('receiveMessage', function (message) {
             const chatMessages = document.getElementById('chatMessages');
             const messageElement = document.createElement('div');
             messageElement.textContent = message.sender + ': ' + message.message;
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
+        socket.emit('joinRoomChat', { roomId: gameId });
     </script>
 </body>
 
